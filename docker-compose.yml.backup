@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: boleia-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-boleia_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-boleia_password}
+      POSTGRES_DB: ${DB_NAME:-boleia_angola}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_fixed.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-boleia_user} -d ${DB_NAME:-boleia_angola}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boleia-network
+
+  # Backend API (Node.js)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: boleia-backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-boleia_angola}
+      DB_USER: ${DB_USER:-boleia_user}
+      DB_PASSWORD: ${DB_PASSWORD:-boleia_password}
+      PORT: ${PORT:-3010}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkey}
+    ports:
+      - "${PORT:-3010}:3010"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - boleia-network
+
+  # Frontend (React + Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: boleia-frontend
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3010}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - boleia-network
+
+volumes:
+  postgres_data:
+
+networks:
+  boleia-network:
+    driver: bridge

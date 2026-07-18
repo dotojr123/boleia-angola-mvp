@@ -1,0 +1,210 @@
+-- Full Backup of Boleia Angola Database (Migrated from Supabase)
+-- Generated on 2026-01-30
+
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Types / Enums
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('passenger', 'driver', 'admin');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected', 'none');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE experience_level AS ENUM ('novice', 'intermediate', 'expert', 'ambassador');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE ride_status AS ENUM ('scheduled', 'active', 'completed', 'cancelled');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'rejected', 'cancelled');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- 1. Profiles
+CREATE TABLE profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT,
+    avatar_url TEXT,
+    phone TEXT,
+    bio TEXT,
+    license_number TEXT,
+    verification_status verification_status DEFAULT 'none',
+    rating NUMERIC(10, 2) DEFAULT 5.0,
+    reviews_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    experience_level experience_level DEFAULT 'novice',
+    interests TEXT[],
+    travel_preferences JSONB DEFAULT '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}',
+    role user_role DEFAULT 'passenger',
+    avg_rating NUMERIC(10, 2) DEFAULT 5.0,
+    total_reviews INTEGER DEFAULT 0,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    display_name VARCHAR(100),
+    gender VARCHAR(20),
+    birthdate DATE,
+    phone_verified BOOLEAN DEFAULT FALSE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    rides_offered INTEGER DEFAULT 0,
+    rides_taken INTEGER DEFAULT 0,
+    response_rate INTEGER DEFAULT 0
+);
+
+-- 2. System Settings
+CREATE TABLE system_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    key TEXT UNIQUE,
+    value JSONB,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Vehicles
+CREATE TABLE vehicles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    make TEXT,
+    model TEXT,
+    year INTEGER,
+    color TEXT,
+    plate TEXT,
+    seats_capacity INTEGER DEFAULT 4,
+    photo_url TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    category VARCHAR(20),
+    comfort_level VARCHAR(20),
+    comfort_stars INTEGER,
+    pictures JSONB DEFAULT '[]',
+    is_verified BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Rides
+CREATE TABLE rides (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    driver_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    vehicle_id UUID REFERENCES vehicles(id),
+    origin TEXT,
+    destination TEXT,
+    stops TEXT[],
+    departure_time TIMESTAMPTZ,
+    estimated_duration INTERVAL,
+    price_per_seat NUMERIC(10, 2),
+    currency TEXT DEFAULT 'Kz',
+    total_seats INTEGER,
+    available_seats INTEGER,
+    status ride_status DEFAULT 'scheduled',
+    description TEXT,
+    preferences JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    baggage_policy VARCHAR(20),
+    permanent_id VARCHAR(100),
+    frequency VARCHAR(20),
+    price_with_commission NUMERIC(10, 2),
+    distance_km INTEGER,
+    luggage_size VARCHAR(20),
+    detour_allowed VARCHAR(20),
+    schedule_flexibility VARCHAR(50),
+    booking_mode VARCHAR(20),
+    view_count INTEGER DEFAULT 0,
+    is_comfort BOOLEAN DEFAULT FALSE,
+    cross_border_alert BOOLEAN DEFAULT FALSE
+);
+
+-- 5. Bookings
+CREATE TABLE bookings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ride_id UUID REFERENCES rides(id),
+    passenger_id UUID REFERENCES profiles(id),
+    seats_booked INTEGER DEFAULT 1,
+    total_price NUMERIC(10, 2),
+    status booking_status DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    booking_code VARCHAR(10),
+    file_number VARCHAR(20),
+    unit_price NUMERIC(10, 2),
+    commission NUMERIC(10, 2),
+    currency VARCHAR(3),
+    passenger_refund NUMERIC(10, 2) DEFAULT 0,
+    driver_compensation NUMERIC(10, 2) DEFAULT 0,
+    expire_date TIMESTAMPTZ,
+    trip_is_passed BOOLEAN DEFAULT FALSE,
+    message_contact_allowed BOOLEAN DEFAULT TRUE,
+    phone_contact_allowed BOOLEAN DEFAULT FALSE
+);
+
+-- 6. Reviews
+CREATE TABLE reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    booking_id UUID REFERENCES bookings(id),
+    reviewer_id UUID REFERENCES profiles(id),
+    reviewee_id UUID REFERENCES profiles(id),
+    rating INTEGER,
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    role VARCHAR(20),
+    trip_id UUID REFERENCES rides(id),
+    moderation_status VARCHAR(20) DEFAULT 'ACTIVE'
+);
+
+-- 7. Messages
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    sender_id UUID REFERENCES profiles(id),
+    receiver_id UUID REFERENCES profiles(id),
+    ride_id UUID REFERENCES rides(id),
+    content TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    booking_id UUID REFERENCES bookings(id),
+    read_at TIMESTAMPTZ
+);
+
+-- 8. Waypoints
+CREATE TABLE waypoints (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ride_id UUID REFERENCES rides(id),
+    order_index INTEGER,
+    type TEXT[],
+    city VARCHAR(100),
+    address TEXT,
+    country_code VARCHAR(2) DEFAULT 'AO',
+    arrival_datetime TIMESTAMPTZ,
+    departure_datetime TIMESTAMPTZ,
+    price_to_next NUMERIC(10, 2),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INSERT DATA
+-- Profiles
+INSERT INTO profiles (id, email, full_name, avatar_url, phone, verification_status, rating, reviews_count, created_at, updated_at, experience_level, travel_preferences, role, avg_rating, total_reviews, phone_verified, email_verified, rides_offered, rides_taken, response_rate) VALUES
+('64600275-8aa4-437a-9337-6bb2e0949e19', 'artnaweb2022@gmail.com', 'Roberto', 'https://ui-avatars.com/api/?name=Roberto&background=0D8ABC&color=fff', NULL, 'verified', 5.00, 0, '2025-11-29 02:11:31.479964+00', '2025-11-29 02:11:31.479964+00', 'novice', '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}', 'driver', 5.00, 0, false, false, 0, 0, 0),
+('681aeabd-1582-410c-83d3-062ea011750f', 'jose.motorista@demo.com', 'Jose Motorista', 'https://ui-avatars.com/api/?name=Jose%20Motorista&background=0D8ABC&color=fff', NULL, 'none', 5.00, 0, '2026-01-23 05:45:57.275755+00', '2026-01-23 05:45:57.275755+00', 'novice', '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}', 'driver', 5.00, 0, false, false, 0, 0, 0),
+('af69cf7a-db7e-4c4c-be0f-06892072c90d', 'passageiro@demo.com', 'Ana Passageira', 'https://ui-avatars.com/api/?name=Ana+Passageira&background=0D8ABC&color=fff', NULL, 'none', 5.00, 0, '2026-01-23 05:45:57.300552+00', '2026-01-23 05:45:57.300552+00', 'novice', '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}', 'passenger', 5.00, 0, false, false, 0, 0, 0),
+('d3f312ef-045e-4412-8fa2-5c01485c7307', 'admin@demo.com', 'Admin Sistema', 'https://ui-avatars.com/api/?name=Admin+Sistema&background=0D8ABC&color=fff', '+244 923 456 791', 'verified', 5.00, 0, '2025-11-29 02:50:40.764249+00', '2025-11-29 02:50:40.764249+00', 'novice', '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}', 'admin', 5.00, 0, false, false, 0, 0, 0),
+('02b006ff-bb39-4e0a-9890-aebe11b2d4e3', 'motorista@demo.com', 'Carlos Motorista', NULL, NULL, 'verified', 5.00, 0, '2026-01-29 01:59:01.530327+00', '2026-01-29 01:59:01.530327+00', 'novice', '{"pets": false, "music": true, "smoking": false, "chattiness": "medium"}', 'driver', 5.00, 0, false, false, 0, 0, 0);
+
+-- Grant permissions to the database user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO boleia_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO boleia_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO boleia_user;

@@ -1,0 +1,10 @@
+{
+  "profile": "openai",
+  "env": {
+    "OPENAI_BASE_URL": "https://integrate.api.nvidia.com/v1",
+    "OPENAI_MODEL": "deepseek-ai/deepseek-v4-pro",
+    "OPENAI_API_FORMAT": "chat_completions",
+    "OPENAI_API_KEY": "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"
+  },
+  "createdAt": "2026-04-30T06:41:03.399Z"
+}

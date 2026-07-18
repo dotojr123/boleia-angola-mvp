@@ -1,0 +1,182 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-07-16T22:00:00Z",
+  "project": "Boleia Angola",
+  "user_name": "Usuário",
+  "chat_language": "pt-br",
+  "doc_language": "Português",
+  "phase": "auditoria_concluida",
+  "doc_level": "essencial",
+  "specs_choice": "auto",
+  "answer_mode": "file",
+  "current_agent": "reviewer_e2e_full_audit",
+  "completed_agents": ["scout", "archaeologist", "architect", "detective", "data_master", "designer", "reviewer_e2e_audit", "reviewer_e2e_full_audit"],
+  "tasks": [
+    {
+      "id": "scout",
+      "name": "Scout — Mapeamento superficial",
+      "status": "completed",
+      "completed_at": "2026-07-16T19:40:00Z"
+    },
+    {
+      "id": "archaeologist_all",
+      "name": "Archaeologist — Análise completa dos 12 módulos",
+      "status": "completed",
+      "completed_at": "2026-07-16T19:58:00Z"
+    },
+    {
+      "id": "architect",
+      "name": "Architect — Síntese arquitetural",
+      "status": "completed",
+      "completed_at": "2026-07-16T20:10:00Z"
+    },
+    {
+      "id": "detective",
+      "name": "Detective — Extração de regras de negócio",
+      "status": "completed",
+      "completed_at": "2026-07-16T20:20:00Z"
+    },
+    {
+      "id": "data_master",
+      "name": "Data Master — Documentação do banco de dados",
+      "status": "completed",
+      "completed_at": "2026-07-16T20:30:00Z"
+    },
+    {
+      "id": "designer",
+      "name": "Designer — Decisão de topologia e specs alvo",
+      "status": "completed",
+      "completed_at": "2026-07-16T21:00:00Z"
+    },
+    {
+      "id": "reviewer_e2e_audit",
+      "name": "Reviewer — Auditoria End-to-End (E2E)",
+      "status": "completed",
+      "completed_at": "2026-07-16T21:30:00Z"
+    },
+    {
+      "id": "reviewer_e2e_full_audit",
+      "name": "Reviewer — Auditoria E2E Completa (Reconstrução)",
+      "status": "completed",
+      "completed_at": "2026-07-16T22:00:00Z"
+    },
+    {
+      "id": "inspector",
+      "name": "Inspector — Validação de cobertura",
+      "status": "cancelled"
+    },
+    {
+      "id": "screen_translator",
+      "name": "Screen Translator — Tradução de telas",
+      "status": "cancelled"
+    },
+    {
+      "id": "audit",
+      "name": "Audit — Revisão cruzada",
+      "status": "cancelled"
+    },
+    {
+      "id": "regression_check",
+      "name": "Verificação de regressão semântica",
+      "status": "cancelled"
+    }
+  ],
+  "summary": {
+    "scout": {
+      "languages": "TypeScript/TSX (86 files), JavaScript (37 files), SQL (21 files)",
+      "frameworks": "React + Express + PostgreSQL",
+      "modules": 12,
+      "total_files": 181,
+      "test_coverage": "~15 arquivos de teste"
+    },
+    "archaeologist_all": {
+      "modules_analyzed": ["auth", "rides", "bookings", "profiles", "admin", "vehicles", "messages", "notifications", "alerts", "driver", "reviews", "uploads"],
+      "total_routes": 48,
+      "total_lines": 2700,
+      "confidence": { "confirmed": 100, "inferred": 6, "unknown": 2 },
+      "entities": ["User", "AuthToken", "Ride", "Booking", "Vehicle", "Message", "Notification", "Alert", "Review", "DriverApplication"],
+      "business_rules": 28,
+      "vulnerabilities": ["JWT secret fallback hardcoded (CRÍTICO)"]
+    },
+    "architect": {
+      "artifacts_generated": ["architecture.md", "c4-context.md"],
+      "diagramas": ["C4 Contexto (Nível 1)"],
+      "integration_points": 0,
+      "tech_debt_items": ["JWT secret hardcoded", "Code duplication (phone validation)", "Low test coverage (~8%)", "No 2FA"]
+    },
+    "detective": {
+      "artifacts_generated": ["domain.md", "state-machines.md", "permissions.md"],
+      "business_rules_extracted": 41,
+      "state_machines_documented": 8,
+      "roles_defined": 3,
+      "vulnerabilities_identified": 1,
+      "security_gaps": 4,
+      "confidence": { "confirmed": 41, "inferred": 8, "gaps": 6 }
+    },
+    "data_master": {
+      "artifacts_generated": ["database/data-dictionary.md", "database/erd.md", "database/business-rules.md"],
+      "tables_documented": 12,
+      "enums_defined": 5,
+      "indexes_created": 45,
+      "triggers_implemented": 6,
+      "functions_created": 6,
+      "rls_policies": 30,
+      "check_constraints": 5,
+      "confidence": { "confirmed": 12, "inferred": 0, "gaps": 0 }
+    },
+    "designer": {
+      "artifacts_generated": [
+        "migration/topology_decision.md",
+        "migration/target_architecture.md",
+        "migration/target_domain_model.md",
+        "migration/target_data_model.md",
+        "migration/data_migration_plan.md"
+      ],
+      "topology_decided": "Feature-Sliced Design (FSD)",
+      "bounded_contexts": 6,
+      "aggregates": 6,
+      "commands_defined": 28,
+      "events_defined": 15,
+      "ddl_created": "6 tabelas, 40+ constraints, 30+ indexes, 4 functions, 6 triggers",
+      "migration_strategy": "Big Bang (in-place transformation)",
+      "confidence": { "confirmed": 95, "inferred": 4, "gaps": 1 }
+    },
+    "reviewer_e2e_full_audit": {
+      "page_audited": 33,
+      "components_audited": 28,
+      "api_endpoints_audited": 48,
+      "bugs_found": {
+        "critical": 7,
+        "high": 12,
+        "medium": 18,
+        "low": 15,
+        "total": 52
+      },
+      "zombie_buttons_found": 1,
+      "contract_breaks_found": 4,
+      "http_500_errors_found": 2,
+      "database_seed_script": "seed_data_full.sql (50 passageiros, 30 motoristas, 150-250 viagens, 300-600 reservas)",
+      "reconstruction_plan": "reconstruction_plan.md (14 semanas para produção confiável)",
+      "confidence": { "confirmed": 52, "inferred": 0, "gaps": 0 }
+    }
+  },
+  "warnings": [
+    "VULNERABILIDADE CRÍTICA: JWT secret fallback hardcoded em server/src/routes/auth.js:134",
+    "BOTÕES ZUMBIS: Demo credentials em Login.tsx:471-508 (não existem no BD)",
+    "QUEBRA DE CONTRATO: origin/destination vs origin_city/destination_city (4+ componentes afetados)",
+    "HTTP 500: /api/admin/reviews (author_id/recipient_id inexistentes) - CORRIGIDO",
+    "HTTP 500: /bookings (endpoint errado - deve ser /bookings/passenger)",
+    "TEST COVERAGE: ~8% (necessário aumentar para 80% +)",
+    "ESTADO: NÃO PRODUCTION READY - Reconstrução estruturada recomendada"
+  ],
+  "metrics": {
+    "total_artifacts": 31,
+    "total_documentation_kb": 315,
+    "progress_percentage": 100,
+    "fases_completas": 4,
+    "fases_restantes": 0,
+    "bugs_identificados": 52,
+    "scripts_gerados": 1,
+    "planos_gerados": 1
+  }
+}

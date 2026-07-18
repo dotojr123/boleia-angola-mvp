@@ -1,0 +1,111 @@
+name: Validate Test Results
+
+on:
+  workflow_run:
+    workflows: ['Test on Implementation Complete']
+    types:
+      - completed
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.validate.outputs.status }}
+      success_rate: ${{ steps.validate.outputs.success_rate }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-test-results
+          path: test-results/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-test-results
+          path: test-results/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results/
+
+      - name: Validate results
+        id: validate
+        run: |
+          echo "🔍 Validando resultados..."
+
+          # Contar testes
+          TOTAL=0
+          PASSED=0
+          FAILED=0
+
+          # Backend
+          if [ -f "test-results/backend-results.json" ]; then
+            BACKEND_TOTAL=$(jq '.numTotalTestSuites' test-results/backend-results.json)
+            BACKEND_PASSED=$(jq '.numPassedTestSuites' test-results/backend-results.json)
+            BACKEND_FAILED=$(jq '.numFailedTestSuites' test-results/backend-results.json)
+            TOTAL=$((TOTAL + BACKEND_TOTAL))
+            PASSED=$((PASSED + BACKEND_PASSED))
+            FAILED=$((FAILED + BACKEND_FAILED))
+          fi
+
+          # Frontend
+          if [ -f "test-results/frontend-results.json" ]; then
+            FRONTEND_TOTAL=$(jq '.numTotalTestSuites' test-results/frontend-results.json)
+            FRONTEND_PASSED=$(jq '.numPassedTestSuites' test-results/frontend-results.json)
+            FRONTEND_FAILED=$(jq '.numFailedTestSuites' test-results/frontend-results.json)
+            TOTAL=$((TOTAL + FRONTEND_TOTAL))
+            PASSED=$((PASSED + FRONTEND_PASSED))
+            FAILED=$((FAILED + FRONTEND_FAILED))
+          fi
+
+          echo ""
+          echo "📊 Resultados:"
+          echo "  Total: $TOTAL"
+          echo "  Passou: $PASSED"
+          echo "  Falhou: $FAILED"
+          echo ""
+
+          SUCCESS_RATE=0
+          if [ $TOTAL -gt 0 ]; then
+            SUCCESS_RATE=$((PASSED * 100 / TOTAL))
+          fi
+
+          echo "success_rate=$SUCCESS_RATE" >> $GITHUB_OUTPUT
+
+          if [ $FAILED -eq 0 ]; then
+            echo "✅ 100% de sucesso!"
+            echo "status=APPROVED" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Testes falharam: $FAILED"
+            echo "status=REQUIRES_REVIEW" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create summary
+        run: |
+          echo "## 📊 Resumo dos Testes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total | ${{ steps.validate.outputs.total }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Passou | ✅ ${{ steps.validate.outputs.passed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Falhou | ❌ ${{ steps.validate.outputs.failed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sucesso | ${{ steps.validate.outputs.success_rate }}% |" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: needs.validate.outputs.status == 'APPROVED'
+
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          # Implement deploy steps here
+
+      - name: Create release
+        run: |
+          echo "🏷️ Creating release tag..."
+          # git tag "v$(date +%Y%m%d)-$(git rev-parse --short HEAD)"

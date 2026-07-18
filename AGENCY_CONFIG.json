@@ -1,0 +1,49 @@
+{
+  "project_id": "boleia-angola-001",
+  "project_name": "Boleia Angola - Sistema de Caronas Compartilhadas",
+  "version": "1.0.0",
+  "status": "production_readiness_review",
+  "stack": {
+    "frontend": {
+      "framework": "React 19",
+      "bundler": "Vite",
+      "language": "TypeScript",
+      "port": 3002
+    },
+    "backend": {
+      "framework": "Express",
+      "language": "Node.js",
+      "port": 3010
+    },
+    "database": {
+      "type": "PostgreSQL 15",
+      "schema": "boleia_angola"
+    },
+    "auth": {
+      "type": "JWT",
+      "rls_enabled": true
+    }
+  },
+  "agents_active": [
+    "discovery",
+    "prd_generator",
+    "prd_validator",
+    "tech_architect",
+    "spec_generator",
+    "spec_enricher",
+    "sprint_planner",
+    "coder",
+    "evaluator",
+    "security_auditor",
+    "acceptance_reviewer"
+  ],
+  "current_phase": "validation_audit",
+  "phases": {
+    "discovery": "completed",
+    "prd": "completed",
+    "spec": "completed",
+    "development": "completed",
+    "validation_audit": "in_progress",
+    "production_readiness": "pending"
+  }
+}

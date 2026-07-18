@@ -1,0 +1,309 @@
+---
+name: ai-agency-squad-enterprise
+description: >
+  Cria e orquestra um squad ELITE de 18 agentes de IA para uma agência de software profissional de nível mundial,
+  seguindo a metodologia LionLab / Spec-Driven Development (SDD) com especialização por camadas.
+  Use esta skill SEMPRE que o usuário mencionar: criar agentes, squad de IA, agência de IA, pipeline de desenvolvimento com IA,
+  orquestrar agentes, montar time de agentes, criar workflow de IA, sistema multi-agente, agentes especializados,
+  pipeline SDD, desenvolvimento com agentes, ou qualquer variação de "criar squad/time/equipe de agentes de IA".
+  Também acione quando o usuário quiser automatizar um pipeline completo de software com IA.
+---
+
+# AI Agency Squad Enterprise — Metodologia LionLab / SDD
+
+Este skill instancia um **squad hierárquico de 18 agentes** para operar uma agência de IA de alto desempenho. A arquitetura segue a Orquestração Hierárquica (Diretriz de Arquitetura §3), o Agent Harness de 7 camadas (Agent Harness §2) e o pipeline SDD de 18 etapas (Manual de Processo §2–7).
+
+---
+
+## 1. PRINCÍPIOS FUNDAMENTAIS
+
+Antes de instanciar qualquer agente, internalize estas regras invioláveis:
+
+- **O LLM é commodity; o Harness é o IP.** O valor está nas restrições e no controle, não no modelo.
+- **Separação absoluta:** Descoberta → Planejamento → Execução nunca se misturam na mesma janela de contexto.
+- **Especialização por camadas:** DB, Backend, Frontend e Integration são agentes separados.
+- **60/30/10 de Custos:**
+  - 60% → Flash (triagem, documentação, testes simples)
+  - 30% → Sonnet (raciocínio técnico médio, implementação)
+  - 10% → Opus (Orquestrador, Acceptance Reviewer, UX/Accessibility)
+- **Estratégia Iceberg:** Agentes carregam apenas o fragmento de contexto necessário para a tarefa imediata.
+- **JSON > Markdown** para specs dinâmicas (evita reescrita e exclusão acidental de tarefas).
+- **3 falhas consecutivas = intervenção humana obrigatória.**
+- **Test coverage mínimo: 80%** — bloqueia merge se inferior.
+
+---
+
+## 2. TOPOLOGIA DO SQUAD (18 AGENTES)
+
+```
+┌─────────────────────────────────────────┐
+│ AGENTE ORQUESTRADOR │ ← Opus | Visão macro
+│ (Gerencia o Harness completo) │
+└────────────────┬────────────────────────┘
+│ delega
+┌────────────┼────────────────────┐
+▼ ▼ ▼
+┌────────┐ ┌─────────┐ ┌──────────┐
+│ESTÁGIO │ │ESTÁGIO │ ... │ ESTÁGIO │
+│ I │ │ II │ │ V │
+│Discover│ │ Tech │ │ Deploy │
+└────────┘ └─────────┘ └──────────┘
+```
+
+### 2.1 Tabela de Agentes por Setor
+
+| # | Agente | Modelo | Fase | Responsabilidade |
+|---|--------|--------|------|------------------|
+| 1 | **Orquestrador** | Opus | Base | Gestão do Harness, KPIs, delegação |
+| 2 | **Discovery Agent** | Sonnet | Base | Entrevista estruturada → `Discovery.md` |
+| 3 | **PRD Generator** | Sonnet | Base | User Stories e requisitos → `PRD.md` |
+| 4 | **PRD Validator** | Flash | Base | Audita ambiguidades em contexto limpo |
+| 5 | **Tech Architect** | Sonnet | Base | Define Stack, Migrations, DB Schema |
+| 6 | **Spec Generator** | Sonnet | Base | Traduz PRD → `Spec.json` técnica |
+| 7 | **Spec Enricher** | Sonnet | Base | Ceticismo técnico; busca gaps e edge cases |
+| 8 | **Sprint Planner** | Flash | Base | Decompõe Spec em sprints JSON |
+| 9 | **DB Agent** | Sonnet | 1 | Modelagem de dados, migrations, índices, RLS |
+| 10 | **Backend Agent** | Sonnet | 1 | APIs, autenticação, integrações, lógica de negócio |
+| 11 | **Frontend Agent** | Sonnet | 1 | UI components, estado, responsividade, acessibilidade |
+| 12 | **Integration Agent** | Sonnet | 1 | Valida integração, health checks, env vars |
+| 13 | **Test Agent** | Sonnet | 2 | Testes unitários, E2E, coverage > 80% |
+| 14 | **DevOps Agent** | Sonnet | 2 | CI/CD, Docker, deploy, monitoring |
+| 15 | **Performance Agent** | Sonnet | 3 | Lighthouse, otimização de bundle, TTI, TFP |
+| 16 | **UX/Accessibility Agent** | Opus | 3 | WCAG 2.1 AA, navegação por teclado, screen readers |
+| 17 | **Documentation Agent** | Flash | 3 | README, API docs, ADRs, runbooks |
+| 18 | **Security Auditor** | Sonnet | Base | RLS, secrets, UUIDs, pentest contínuo |
+| 19 | **Acceptance Reviewer** | Opus | Base | Auditoria sistêmica 1M+ tokens ao final |
+
+**Legado (compatibilidade):**
+| 20 | **Coder Agent** | Sonnet | Base | Implementa sprint completa (generalista, substituído por DB+Backend+Frontend) |
+
+---
+
+## 3. COMO INSTANCIAR O SQUAD
+
+Ao ativar esta skill, execute os passos na ordem:
+
+### PASSO 1 — Coletar Contexto da Agência
+
+Pergunte ao usuário (se não já informado):
+1. **Domínio:** Qual o tipo de projeto/produto que a agência vai construir?
+2. **Stack preferida:** Frontend, Backend, Database, Auth?
+3. **Integrações externas:** APIs de terceiros já definidas?
+4. **Restrições de negócio:** Prazos, orçamento de tokens, time de pessoas?
+5. **Nível de especialização:** Base, Fase 1, Fase 2 ou Fase 3?
+
+### PASSO 2 — Gerar o `agency-config.json`
+
+Crie o arquivo de configuração central do squad:
+
+```json
+{
+  "agency_id": "<UUID>",
+  "project_name": "<nome>",
+  "stack": {
+    "frontend": "<ex: Next.js>",
+    "backend": "<ex: Node.js>",
+    "database": "<ex: Supabase>",
+    "auth": "<ex: Supabase Auth>"
+  },
+  "harness": {
+    "cost_model": {"flash": 0.60, "sonnet": 0.30, "opus": 0.10},
+    "max_correction_rounds": 3,
+    "context_hygiene": {"compact_at": "60%", "clear_after_compactions": 3},
+    "test_coverage_minimum": 0.80,
+    "lighthouse_target": 90
+  },
+  "phases": {
+    "phase1": {
+      "enabled": true,
+      "agents": ["db_agent", "backend_agent", "frontend_agent", "integration_agent"]
+    },
+    "phase2": {
+      "enabled": true,
+      "agents": ["test_agent", "devops_agent"]
+    },
+    "phase3": {
+      "enabled": false,
+      "agents": ["performance_agent", "ux_accessibility_agent", "documentation_agent"]
+    }
+  },
+  "agents": [
+    {"id": "orchestrator", "model": "opus", "active": true},
+    {"id": "discovery", "model": "sonnet", "active": true},
+    {"id": "prd_generator", "model": "sonnet", "active": true},
+    {"id": "prd_validator", "model": "flash", "active": true},
+    {"id": "tech_architect", "model": "sonnet", "active": true},
+    {"id": "spec_generator", "model": "sonnet", "active": true},
+    {"id": "spec_enricher", "model": "sonnet", "active": true},
+    {"id": "sprint_planner", "model": "flash", "active": true},
+    {"id": "db_agent", "model": "sonnet", "active": true},
+    {"id": "backend_agent", "model": "sonnet", "active": true},
+    {"id": "frontend_agent", "model": "sonnet", "active": true},
+    {"id": "integration_agent", "model": "sonnet", "active": true},
+    {"id": "test_agent", "model": "sonnet", "active": true},
+    {"id": "devops_agent", "model": "sonnet", "active": true},
+    {"id": "performance_agent", "model": "sonnet", "active": false},
+    {"id": "ux_accessibility_agent", "model": "opus", "active": false},
+    {"id": "documentation_agent", "model": "flash", "active": false},
+    {"id": "security_auditor", "model": "sonnet", "active": true},
+    {"id": "acceptance_reviewer", "model": "opus", "active": true}
+  ]
+}
+```
+
+### PASSO 3 — Iniciar o Pipeline de 18 Etapas
+
+Consulte os arquivos de referência:
+- `pipeline.md` — Agentes base (1-8, 18-19)
+- `pipeline-phase1.md` — DB, Backend, Frontend, Integration (9-12)
+- `pipeline-phase2.md` — Test, DevOps (13-14)
+- `pipeline-phase3.md` — Performance, UX/Accessibility, Documentation (15-17)
+
+### PASSO 4 — Monitorar via Harness
+
+Consulte `harness-updated.md` para a estrutura de 7 camadas de governança com todos os 18 agentes.
+
+### PASSO 5 — Manter o `progress.txt`
+
+O arquivo de progresso externo é OBRIGATÓRIO. Ele é a memória de longo prazo entre sessões:
+
+```
+Sessão 01: agency-config.json criado. Discovery.md gerado.
+Sessão 02: PRD.md aprovado. Stack definida: Next.js + Supabase.
+Sessão 03: Spec.json gerada. 31 edge cases mapeados pelo Enricher.
+Sessão 04: DB Agent — Schema otimizado com RLS e índices.
+Sessão 05: Backend Agent — APIs implementadas com autenticação.
+Sessão 06: Frontend Agent — UI components com acessibilidade.
+Sessão 07: Integration Agent — Health checks validados.
+Sessão 08: Test Agent — Coverage 87%, testes E2E passando.
+Sessão 09: DevOps Agent — CI/CD configurado, deploy staging OK.
+Sessão 10: Sprint 1 (Auth) COMPLETA. Evaluator score: 0.96.
+Sessão 11: Pendente — Sprint 2 (Core Features). Próximo: context_clean_spawn.
+```
+
+---
+
+## 4. REGRAS DO HARNESS (INVIOLÁVEIS)
+
+O Harness governa TODOS os agentes. Nenhum agente opera fora destas regras:
+
+1. **Isolamento de Contexto:** Cada agente recebe APENAS o artefato necessário para sua tarefa. Nunca o histórico completo.
+2. **Contexto Limpo para Validadores:** PRD Validator, Spec Enricher, Evaluator, Test Agent SEMPRE operam em nova janela — sem acesso ao histórico de criação.
+3. **Especialização Respeitada:**
+   - Backend Agent NÃO acessa banco diretamente (usa DB Agent)
+   - Frontend Agent NÃO modifica backend
+   - DB Agent NÃO faz DROP sem soft delete
+   - Integration Agent NÃO cria endpoints hardcoded
+4. **Human-in-the-Loop obrigatório em:** DROP TABLE, deploy em produção, mudanças de schema críticas, coverage < 80%, performance abaixo do alvo.
+5. **Feedback estruturado:** O Evaluator NUNCA retorna texto livre — sempre um objeto JSON de feedback que o Harness usa para forçar correção.
+6. **Auto-evolução:** Erros recorrentes devem ser registrados nos arquivos `agents.md` / `cloud.md` como regras permanentes.
+
+---
+
+## 5. ESTRUTURA DE ARTEFATOS GERADOS
+
+```
+project-root/
+├── agency-config.json ← Configuração do Squad
+├── progress.txt ← Memória externa entre sessões
+├── agents.md ← Self-modifying rules (aprendizados)
+├── cloud.md ← Regras de arquitetura persistentes
+│
+├── 01_discovery/
+│ └── Discovery.md
+│
+├── 02_product/
+│ ├── PRD.md ← Mínimo 800 linhas
+│ └── PRD_validation.json
+│
+├── 03_architecture/
+│ ├── stack.md
+│ └── migrations.sql
+│
+├── 04_spec/
+│ ├── Spec.json ← Formato JSON obrigatório
+│ └── enricher_report.json ← 31+ edge cases identificados
+│
+├── 05_planning/
+│ ├── feature_list.json
+│ └── sprints.json
+│
+├── 06_development/ (FASE 1)
+│ ├── db/
+│ │ ├── migrations.sql (otimizado)
+│ │ └── db_summary.md
+│ ├── backend/
+│ │ ├── api/
+│ │ └── backend_summary.md
+│ ├── frontend/
+│ │ ├── components/
+│ │ └── frontend_summary.md
+│ └── integration/
+│     ├── health_checks/
+│ │   └── integration_report.md
+│
+├── 07_quality/ (FASE 2)
+│ ├── tests/
+│ │ ├── unit/
+│ │ ├── integration/
+│ │ └── e2e/
+│ ├── test_coverage.md
+│ ├── .github/workflows/ci.yml
+│ └── deploy_summary.md
+│
+├── 08_enterprise/ (FASE 3)
+│ ├── performance_report.md
+│ ├── ux_a11y_report.md
+│ └── documentation_index.md
+│
+└── 09_audit/
+├── security_report.md
+└── acceptance_review.md
+```
+
+---
+
+## 6. MÉTRICAS DE GOVERNANÇA (KPIs do Orquestrador)
+
+O Orquestrador DEVE rastrear e reportar:
+
+| Métrica | Descrição | Meta |
+|---------|-----------|------|
+| `cost_per_agent` | Custo em $ por agente/sessão | < $15 por Discovery |
+| `rounds_to_success` | Rounds até aprovação pelo Evaluator | ≤ 3 rounds |
+| `context_saturation` | % de ocupação da janela de contexto | < 60% por sessão |
+| `evaluator_score` | Score médio do Evaluator (0.0–1.0) | ≥ 0.95 |
+| `test_coverage` | Coverage de testes (%) | ≥ 80% |
+| `lighthouse_score` | Performance score | ≥ 90 |
+| `wcag_compliance` | WCAG 2.1 AA compliance | AA mínimo |
+| `tech_debt_incidents` | Problemas encontrados no Acceptance Review | 0 em produção |
+
+---
+
+## 7. QUICK START — EXEMPLO DE ATIVAÇÃO
+
+Se o usuário disser *"quero criar um squad para desenvolver um SaaS de gestão de tarefas"*:
+
+1. Rode PASSO 1: colete stack e contexto
+2. Defina Fase desejada (1, 2 ou 3)
+3. Instancie o **Discovery Agent** com o prompt de `pipeline.md §1`
+4. Gere `Discovery.md` com 5 blocos: Visão, Funcionalidades, Monetização, Técnico, Contexto
+5. Passe para **PRD Generator** em NOVA janela de contexto
+6. Continue pipeline até `progress.txt` registrar todas as sprints como `status: "completed"`
+
+**Fluxo completo:**
+```
+Discovery → PRD → PRD Validator → Tech Architect → DB Agent → Backend Agent → Frontend Agent → Integration Agent → Test Agent → DevOps Agent → Security Auditor → Acceptance Reviewer
+```
+
+---
+
+## 8. REFERÊNCIAS
+
+- `pipeline.md` — Prompts de sistema para agentes base (1-8, 18-19)
+- `pipeline-phase1.md` — DB Agent, Backend Agent, Frontend Agent, Integration Agent
+- `pipeline-phase2.md` — Test Agent, DevOps Agent
+- `pipeline-phase3.md` — Performance Agent, UX/Accessibility Agent, Documentation Agent
+- `harness-updated.md` — Arquitetura de 7 camadas do Harness com todos os 18 agentes
+- `security.md` — Pre-Deploy Audit Checklist completo
+- `self-modifying-template.md` — Template para `agents.md` e `cloud.md`

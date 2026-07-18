@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-07-16T19:40:00Z",
+  "project_root": "/root/boleia-angola",
+  "languages": [
+    { "name": "TypeScript/TSX", "extensions": [".tsx", ".ts"], "file_count": 86 },
+    { "name": "JavaScript", "extensions": [".js", ".jsx"], "file_count": 37 },
+    { "name": "SQL", "extensions": [".sql"], "file_count": 21 },
+    { "name": "JSON", "extensions": [".json"], "file_count": 14 },
+    { "name": "Markdown", "extensions": [".md"], "file_count": 29 },
+    { "name": "YAML", "extensions": [".yml", ".yaml"], "file_count": 6 },
+    { "name": "HTML", "extensions": [".html"], "file_count": 5 },
+    { "name": "CSS", "extensions": [".css"], "file_count": 1 }
+  ],
+  "primary_language": "TypeScript/TSX",
+  "frameworks": [
+    { "name": "React", "version": "latest", "source": "package.json" },
+    { "name": "React Router", "version": "latest", "source": "package.json" },
+    { "name": "Express", "version": "latest", "source": "server/package.json" },
+    { "name": "Vite", "version": "latest", "source": "package.json" },
+    { "name": "Tailwind CSS", "version": "latest", "source": "package.json" },
+    { "name": "PostgreSQL", "version": "via pg", "source": "server/package.json" },
+    { "name": "Jest", "version": "latest", "source": "server/package.json" },
+    { "name": "Vitest", "version": "latest", "source": "package.json" },
+    { "name": "Playwright", "version": "latest", "source": "package.json" }
+  ],
+  "package_manager": "npm",
+  "entry_points": [
+    { "path": "src/main.tsx", "type": "frontend_entry" },
+    { "path": "server/src/index.js", "type": "backend_entry" },
+    { "path": "App.tsx", "type": "react_root" }
+  ],
+  "config_files": [
+    "package.json",
+    "server/package.json",
+    "tsconfig.json",
+    ".env",
+    ".env.example",
+    ".env.production",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "server/.env"
+  ],
+  "ci_cd": [
+    ".github/workflows/"
+  ],
+  "docker": {
+    "dockerfile": "Dockerfile",
+    "compose": "docker-compose.yml"
+  },
+  "database_hints": [
+    { "path": "migrations/", "type": "migrations_dir" },
+    { "path": "auth_migration.sql", "type": "sql_migration" },
+    { "path": "init_fixed.sql", "type": "sql_init" }
+  ],
+  "test_framework": "Vitest + Playwright",
+  "test_file_count": 15,
+  "modules": [
+    "auth",
+    "rides",
+    "bookings",
+    "profiles",
+    "drivers",
+    "vehicles",
+    "messages",
+    "notifications",
+    "alerts",
+    "admin",
+    "reviews",
+    "uploads"
+  ],
+  "total_files": 181,
+  "frontend_structure": {
+    "pages": [
+      "src/pages/admin/",
+      "src/pages/auth/",
+      "src/pages/driver/",
+      "src/pages/passenger/",
+      "src/pages/profile/",
+      "src/pages/public/"
+    ],
+    "components": [
+      "src/components/layout/",
+      "src/components/profile/",
+      "src/components/sections/",
+      "src/components/ui/"
+    ],
+    "contexts": [
+      "src/contexts/AuthContext.tsx",
+      "src/contexts/NotificationContext.tsx"
+    ],
+    "lib": [
+      "src/lib/api.ts"
+    ]
+  },
+  "backend_structure": {
+    "routes": [
+      "server/src/routes/auth.js",
+      "server/src/routes/rides.js",
+      "server/src/routes/bookings.js",
+      "server/src/routes/profiles.js",
+      "server/src/routes/driver.js",
+      "server/src/routes/vehicles.js",
+      "server/src/routes/messages.js",
+      "server/src/routes/notifications.js",
+      "server/src/routes/alerts.js",
+      "server/src/routes/admin.js",
+      "server/src/routes/reviews.js",
+      "server/src/routes/uploads.js"
+    ],
+    "middleware": [
+      "server/src/middleware/auth.js",
+      "server/src/middleware/rate-limit.js"
+    ],
+    "config": [
+      "server/src/config/db.js"
+    ]
+  },
+  "deployment": {
+    "nginx": "nginx/nginx.conf",
+    "production_config": ".env.production",
+    "pm2": "pm2.config.js (se existir)"
+  }
+}

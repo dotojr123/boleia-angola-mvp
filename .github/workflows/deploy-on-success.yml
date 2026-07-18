@@ -1,0 +1,72 @@
+name: Deploy on Success
+
+on:
+  workflow_run:
+    workflows: ['Validate Test Results']
+    types:
+      - completed
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    environment:
+      name: production
+      url: https://boleia-angola.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd server && npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Deploy to server
+        run: |
+          echo "🚀 Deploying to production server..."
+          # Add deployment commands here
+          # Example: rsync, docker deploy, etc.
+
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            Automated release from successful test run
+            Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Notify success
+        run: |
+          echo "✅ Deploy completed successfully!"
+          # Add notification (Slack, Discord, etc.)
+
+  notify-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: Notify failure
+        run: |
+          echo "❌ Deploy failed!"
+          # Add failure notification

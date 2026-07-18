@@ -1,0 +1,81 @@
+{
+  "feature": "Fluxo do Motorista - Publicação de Viagem",
+  "description": "Motorista cadastra veículo e publica viagem com sucesso",
+  "acceptance_criteria": [
+    {
+      "scenario": "Cadastro de veículo válido",
+      "action": "POST /api/vehicles",
+      "payload": {
+        "make": "Toyota",
+        "model": "Corolla",
+        "year": "2020",
+        "color": "Prata",
+        "plate": "ABC-1234"
+      },
+      "expected_result": "Status 201 Created",
+      "response_fields": ["id", "make", "model", "year", "color", "plate"]
+    },
+    {
+      "scenario": "Publicação de viagem com veículo vinculado",
+      "action": "POST /api/rides",
+      "payload": {
+        "origin": "Luanda",
+        "destination": "Benguela",
+        "departure_time": "2026-04-25T08:00:00+01:00",
+        "price_per_seat": 5000,
+        "total_seats": 4,
+        "available_seats": 4,
+        "vehicle_id": "uuid-do-veiculo"
+      },
+      "expected_result": "Status 201 Created",
+      "response_fields": ["id", "origin", "destination", "departure_time", "price_per_seat", "seats_available"]
+    },
+    {
+      "scenario": "Listagem de viagens do motorista",
+      "action": "GET /api/rides/my-rides",
+      "expected_result": "Status 200 OK",
+      "response_fields": ["id", "origin", "destination", "departure_time", "price_per_seat", "seats_available", "driver_id"]
+    },
+    {
+      "scenario": "Erro ao publicar sem veículo",
+      "action": "POST /api/rides",
+      "payload": { "vehicle_id": null },
+      "expected_result": "Status 400 Bad Request",
+      "error_message": "Veículo não informado"
+    }
+  ],
+  "routes": {
+    "frontend": {
+      "vehicles": "/dashboard/driver/vehicles",
+      "publish_ride": "/dashboard/driver/publish"
+    },
+    "backend": {
+      "vehicles": "/api/vehicles",
+      "rides": "/api/rides",
+      "my_rides": "/api/rides/my-rides"
+    }
+  },
+  "data_models": {
+    "Vehicle": {
+      "id": "UUID (primary key)",
+      "make": "string",
+      "model": "string",
+      "year": "integer",
+      "color": "string",
+      "plate": "string",
+      "owner_id": "UUID (foreign key -> profiles.id)"
+    },
+    "Ride": {
+      "id": "UUID (primary key)",
+      "driver_id": "UUID (foreign key -> profiles.id)",
+      "vehicle_id": "UUID (foreign key -> vehicles.id)",
+      "origin": "string",
+      "destination": "string",
+      "departure_time": "timestamp",
+      "price_per_seat": "decimal",
+      "total_seats": "integer",
+      "available_seats": "integer",
+      "status": "scheduled | completed | cancelled"
+    }
+  }
+}

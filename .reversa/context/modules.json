@@ -1,0 +1,191 @@
+{
+  "generated_at": "2026-07-16T19:40:00Z",
+  "modules": [
+    {
+      "name": "auth",
+      "path": "server/src/routes/auth.js, src/contexts/AuthContext.tsx",
+      "purpose": "Autenticação e autorização de usuários - registro, login, verificação de token e gestão de sessão",
+      "primary_files": [
+        "server/src/routes/auth.js",
+        "src/contexts/AuthContext.tsx",
+        "src/lib/api.ts"
+      ],
+      "functions": [
+        {
+          "name": "register",
+          "file": "server/src/routes/auth.js",
+          "line": 8,
+          "params": ["email: string", "password: string", "full_name: string", "phone?: string", "role?: string"],
+          "returns": "Promise<{ message, token, user }>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "login",
+          "file": "server/src/routes/auth.js",
+          "line": 76,
+          "params": ["email: string", "password: string"],
+          "returns": "Promise<{ message, token, user }>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "getMe",
+          "file": "server/src/routes/auth.js",
+          "line": 126,
+          "params": ["Authorization: Bearer token"],
+          "returns": "Promise<{ user }>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "signIn",
+          "file": "src/contexts/AuthContext.tsx",
+          "line": 108,
+          "params": ["email: string", "password: string"],
+          "returns": "Promise<void>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "signUp",
+          "file": "src/contexts/AuthContext.tsx",
+          "line": 122,
+          "params": ["data: { email, password, full_name, phone?, role? }"],
+          "returns": "Promise<void>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "signOut",
+          "file": "src/contexts/AuthContext.tsx",
+          "line": 136,
+          "params": [],
+          "returns": "Promise<void>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "initAuth",
+          "file": "src/contexts/AuthContext.tsx",
+          "line": 70,
+          "params": [],
+          "returns": "Promise<void>",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "normalizeUser",
+          "file": "src/contexts/AuthContext.tsx",
+          "line": 34,
+          "params": ["apiUser: any"],
+          "returns": "User",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "User",
+          "table": "profiles",
+          "fields": [
+            { "name": "id", "type": "UUID", "required": true, "description": "Chave primária" },
+            { "name": "email", "type": "VARCHAR", "required": true, "unique": true, "description": "Email do usuário" },
+            { "name": "full_name", "type": "VARCHAR", "required": true, "description": "Nome completo" },
+            { "name": "phone", "type": "VARCHAR", "required": false, "description": "Telefone (Angola format)" },
+            { "name": "role", "type": "ENUM", "required": true, "values": ["passenger", "driver", "admin"], "default": "passenger" },
+            { "name": "password_hash", "type": "VARCHAR", "required": true, "description": "Hash bcrypt da senha" },
+            { "name": "avatar_url", "type": "VARCHAR", "required": false, "description": "URL do avatar" },
+            { "name": "verification_status", "type": "VARCHAR", "required": false, "description": "Status de verificação" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "AuthToken",
+          "type": "JWT",
+          "fields": [
+            { "name": "id", "type": "UUID", "description": "ID do usuário" },
+            { "name": "email", "type": "VARCHAR", "description": "Email do usuário" },
+            { "name": "role", "type": "VARCHAR", "description": "Role do usuário" }
+          ],
+          "expiry": "7d",
+          "algorithm": "HS256",
+          "confidence": "confirmed"
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "Senha deve ter mínimo 6 caracteres",
+          "location": "server/src/routes/auth.js:15",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Email deve ser único na tabela profiles",
+          "location": "server/src/routes/auth.js:35-38",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Telefone Angola: +244 ou 9 seguido de 9 dígitos",
+          "location": "server/src/routes/auth.js:24-27",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Role default: passenger se não especificado",
+          "location": "server/src/routes/auth.js:31",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Token JWT expira em 7 dias",
+          "location": "server/src/routes/auth.js:58, 104",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Salt rounds bcrypt: 10",
+          "location": "server/src/routes/auth.js:43",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "VULNERABILIDADE: JWT secret fallback hardcoded ('boleia_secret_key')",
+          "location": "server/src/routes/auth.js:134",
+          "confidence": "confirmed",
+          "severity": "critical"
+        }
+      ],
+      "dependencies": ["profiles", "db", "jwt", "bcrypt"],
+      "algorithms": [
+        {
+          "name": "Password Hashing",
+          "library": "bcryptjs",
+          "details": "bcrypt.genSalt(10) + bcrypt.hash(password, salt)",
+          "location": "server/src/routes/auth.js:43-44",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "JWT Signing",
+          "library": "jsonwebtoken",
+          "details": "jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })",
+          "location": "server/src/routes/auth.js:58, 101-105",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Phone Validation",
+          "details": "Regex /^(\\+244|9)[0-9]{9}$/ + normalização",
+          "location": "server/src/routes/auth.js:24-27",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Role Normalization",
+          "details": "toLowerCase() + mapeamento para passenger/driver/admin",
+          "location": "server/src/routes/auth.js:31, src/contexts/AuthContext.tsx:46-55",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium",
+      "security_notes": [
+        "✅ Senhas hashadas com bcrypt",
+        "✅ JWT com expiry (7 dias)",
+        "✅ Validação de input (email, senha, telefone)",
+        "⚠️ JWT secret fallback hardcoded (CRÍTICO)",
+        "✅ Transações PostgreSQL (BEGIN/COMMIT/ROLLBACK)",
+        "✅ Rate limiting (aplicado via middleware)"
+      ],
+      "confidence_counts": {
+        "confirmed": 15,
+        "inferred": 2,
+        "unknown": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,1032 @@
+# 🚗 Boleia Angola - Especificação Técnica
+
+> Documento de inspiração baseado na análise do BlaBlaCar v5.236.0
+
+---
+
+## 📋 Sumário Executivo
+
+Este documento contém toda a especificação técnica necessária para desenvolver o **Boleia Angola** - um aplicativo de caronas compartilhadas adaptado para o mercado angolano. As especificações foram extraídas do APK descompilado do BlaBlaCar.
+
+---
+
+## 🏗️ Arquitetura Proposta
+
+### Stack Tecnológica Recomendada
+
+| Camada | Tecnologia | Justificativa |
+|--------|------------|---------------|
+| **Frontend Mobile** | React Native ou Flutter | Cross-platform, performance nativa |
+| **Frontend Web** | Next.js 14+ | SSR, SEO, App Router |
+| **Backend** | Node.js + tRPC ou Supabase Edge Functions | Type-safe, serverless |
+| **Database** | Supabase (PostgreSQL) | Realtime, Auth, Storage integrados |
+| **Mapas** | Google Maps ou Mapbox | Geocoding, rotas, ETA |
+| **Pagamentos** | Multicaixa Express, Unitel Money, PayPal | Adaptado para Angola |
+| **Push Notifications** | Firebase Cloud Messaging | Gratuito, confiável |
+| **Analytics** | Mixpanel ou Amplitude | Product analytics |
+
+### Diagrama de Arquitetura
+
+```mermaid
+graph TB
+    subgraph "Client Apps"
+        A[📱 App Mobile<br/>React Native/Flutter]
+        B[🌐 Web App<br/>Next.js]
+    end
+    
+    subgraph "Backend Services"
+        C[🔐 Auth Service<br/>Supabase Auth]
+        D[📡 API Gateway<br/>Edge Functions]
+        E[🗄️ Database<br/>PostgreSQL]
+        F[📦 Storage<br/>Supabase Storage]
+    end
+    
+    subgraph "External Services"
+        G[🗺️ Maps API<br/>Google/Mapbox]
+        H[💳 Payments<br/>Multicaixa/Unitel]
+        I[📲 Push<br/>FCM]
+        J[✉️ SMS/Email<br/>Twilio/SendGrid]
+    end
+    
+    A --> D
+    B --> D
+    D --> C
+    D --> E
+    D --> F
+    D --> G
+    D --> H
+    D --> I
+    D --> J
+```
+
+---
+
+## 📊 Estrutura do Banco de Dados
+
+### Diagrama ER Principal
+
+```mermaid
+erDiagram
+    USERS ||--o{ TRIPS : offers
+    USERS ||--o{ BOOKINGS : makes
+    USERS ||--o{ VEHICLES : owns
+    USERS ||--o{ RATINGS : gives
+    USERS ||--o{ RATINGS : receives
+    TRIPS ||--o{ BOOKINGS : has
+    TRIPS ||--o{ WAYPOINTS : contains
+    TRIPS ||--o{ TRIP_MESSAGES : has
+    BOOKINGS ||--|| PAYMENTS : requires
+    
+    USERS {
+        uuid id PK
+        string email UK
+        string phone UK
+        string first_name
+        string last_name
+        string display_name
+        enum gender
+        date birthdate
+        int age
+        string bio
+        enum bio_moderation_status
+        string picture_url
+        boolean has_picture
+        enum id_checked
+        boolean phone_verified
+        boolean email_verified
+        boolean phone_hidden
+        decimal rating
+        int rating_count
+        int grade
+        int rides_offered
+        int rides_taken
+        enum smoking_preference
+        enum music_preference
+        enum pets_preference
+        enum dialog_preference
+        boolean signed_charter
+        enum booking_type
+        timestamp last_login
+        timestamp created_at
+        jsonb social_connections
+    }
+    
+    VEHICLES {
+        uuid id PK
+        uuid user_id FK
+        string make
+        string model
+        string color
+        string color_hex
+        enum category
+        enum comfort_level
+        int comfort_stars
+        int number_of_seats
+        string license_plate
+        jsonb pictures
+        boolean is_active
+        timestamp created_at
+    }
+    
+    TRIPS {
+        uuid id PK
+        uuid driver_id FK
+        uuid vehicle_id FK
+        string permanent_id UK
+        enum frequency
+        timestamp departure_datetime
+        string departure_city
+        string departure_address
+        decimal departure_latitude
+        decimal departure_longitude
+        string departure_country_code
+        string arrival_city
+        string arrival_address
+        decimal arrival_latitude
+        decimal arrival_longitude
+        string arrival_country_code
+        decimal price
+        string currency
+        decimal price_with_commission
+        int seats_total
+        int seats_left
+        int duration_seconds
+        int distance_km
+        text comment
+        boolean is_freeway
+        enum luggage_size
+        enum detour_allowed
+        enum schedule_flexibility
+        enum booking_mode
+        enum status
+        int view_count
+        timestamp created_at
+    }
+    
+    WAYPOINTS {
+        uuid id PK
+        uuid trip_id FK
+        int order_index
+        enum type
+        string city
+        string address
+        decimal latitude
+        decimal longitude
+        string country_code
+        timestamp arrival_datetime
+        timestamp departure_datetime
+    }
+    
+    BOOKINGS {
+        uuid id PK
+        uuid trip_id FK
+        uuid passenger_id FK
+        string booking_code UK
+        string file_number
+        int seats_booked
+        decimal unit_price
+        decimal total_price
+        decimal commission
+        decimal price_paid
+        enum status
+        timestamp expire_date
+        boolean trip_is_passed
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PAYMENTS {
+        uuid id PK
+        uuid booking_id FK
+        string merchant_reference
+        int payment_reference
+        enum provider
+        enum method
+        enum status
+        decimal amount
+        string currency
+        jsonb provider_response
+        timestamp created_at
+    }
+    
+    RATINGS {
+        uuid id PK
+        uuid sender_id FK
+        uuid receiver_id FK
+        uuid trip_id FK
+        enum role
+        int global_rating
+        text comment
+        timestamp created_at
+    }
+    
+    TRIP_MESSAGES {
+        uuid id PK
+        uuid trip_id FK
+        uuid sender_id FK
+        text content
+        boolean is_read
+        timestamp created_at
+    }
+```
+
+### Tabelas Detalhadas
+
+#### 1. **users** - Usuários do Sistema
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone_country_code VARCHAR(5),
+    phone_national_number VARCHAR(20),
+    phone_raw_input VARCHAR(25),
+    phone_region_code VARCHAR(5),
+    
+    -- Dados Pessoais
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    display_name VARCHAR(100),
+    gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
+    birthdate DATE,
+    bio TEXT,
+    bio_moderation_status VARCHAR(20) DEFAULT 'PENDING',
+    
+    -- Foto de Perfil
+    picture_url TEXT,
+    has_picture BOOLEAN DEFAULT FALSE,
+    picture_moderation_status VARCHAR(20) DEFAULT 'PENDING',
+    
+    -- Verificações
+    id_checked VARCHAR(20) DEFAULT 'TO_CHECK',
+    phone_verified BOOLEAN DEFAULT FALSE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    phone_hidden BOOLEAN DEFAULT FALSE,
+    
+    -- Avaliações
+    rating DECIMAL(3,2) DEFAULT 0,
+    rating_count INTEGER DEFAULT 0,
+    driving_rating INT,
+    grade INTEGER DEFAULT 0,
+    
+    -- Estatísticas
+    rides_offered INTEGER DEFAULT 0,
+    rides_taken INTEGER DEFAULT 0,
+    response_rate INTEGER DEFAULT 0,
+    
+    -- Preferências de Viagem
+    smoking_preference VARCHAR(10) DEFAULT 'MAYBE',
+    music_preference VARCHAR(10) DEFAULT 'MAYBE',
+    pets_preference VARCHAR(10) DEFAULT 'MAYBE',
+    dialog_preference VARCHAR(10) DEFAULT 'MAYBE',
+    
+    -- Configurações
+    signed_charter BOOLEAN DEFAULT FALSE,
+    booking_type VARCHAR(20) DEFAULT 'online',
+    recurring_booking_eligible BOOLEAN DEFAULT FALSE,
+    
+    -- Social
+    social_connections JSONB DEFAULT '{}',
+    
+    -- Timestamps
+    last_login TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_phone ON users(phone_national_number);
+CREATE INDEX idx_users_rating ON users(rating DESC);
+```
+
+#### 2. **vehicles** - Veículos dos Motoristas
+
+```sql
+CREATE TABLE vehicles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    
+    -- Identificação
+    make VARCHAR(50) NOT NULL,  -- Ex: VOLKSWAGEN, TOYOTA
+    model VARCHAR(100) NOT NULL, -- Ex: POLO, COROLLA
+    year INTEGER,
+    license_plate VARCHAR(20),
+    
+    -- Aparência
+    color VARCHAR(50),
+    color_hex VARCHAR(7),
+    
+    -- Classificação
+    category VARCHAR(20) CHECK (category IN (
+        'SEDAN',      -- Berline/Sedan
+        'TOURISM',    -- Veículo de turismo
+        'CONVERTIBLE',-- Cabriolet
+        'WAGON',      -- Break/Station Wagon
+        'SUV',        -- 4x4
+        'VAN',        -- Monospace/Van
+        'SMALL_UTILITY',
+        'BIG_UTILITY'
+    )),
+    
+    comfort_level VARCHAR(20) CHECK (comfort_level IN (
+        'BASIC',
+        'NORMAL',
+        'COMFORT',
+        'LUXURY'
+    )),
+    comfort_stars INTEGER CHECK (comfort_stars BETWEEN 1 AND 5),
+    
+    -- Capacidade
+    number_of_seats INTEGER DEFAULT 4,
+    
+    -- Mídia
+    pictures JSONB DEFAULT '[]',
+    
+    -- Status
+    is_active BOOLEAN DEFAULT TRUE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_vehicles_user ON vehicles(user_id);
+```
+
+#### 3. **trips** - Viagens Oferecidas
+
+```sql
+CREATE TABLE trips (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    vehicle_id UUID REFERENCES vehicles(id),
+    
+    -- Identificação
+    permanent_id VARCHAR(100) UNIQUE, -- Ex: "12345-luanda-benguela"
+    
+    -- Frequência
+    frequency VARCHAR(20) DEFAULT 'UNIQUE' CHECK (frequency IN (
+        'UNIQUE',
+        'DAILY',
+        'WEEKLY',
+        'WEEKDAYS'
+    )),
+    
+    -- Horários
+    departure_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    
+    -- Local de Partida
+    departure_city VARCHAR(100) NOT NULL,
+    departure_address TEXT,
+    departure_latitude DECIMAL(10, 8),
+    departure_longitude DECIMAL(11, 8),
+    departure_country_code VARCHAR(2) DEFAULT 'AO',
+    
+    -- Local de Chegada
+    arrival_city VARCHAR(100) NOT NULL,
+    arrival_address TEXT,
+    arrival_latitude DECIMAL(10, 8),
+    arrival_longitude DECIMAL(11, 8),
+    arrival_country_code VARCHAR(2) DEFAULT 'AO',
+    
+    -- Preço
+    price DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'AOA',
+    price_with_commission DECIMAL(10, 2),
+    
+    -- Lugares
+    seats_total INTEGER NOT NULL DEFAULT 4,
+    seats_left INTEGER NOT NULL DEFAULT 4,
+    
+    -- Duração/Distância
+    duration_seconds INTEGER,
+    distance_km INTEGER,
+    
+    -- Detalhes
+    comment TEXT,
+    is_freeway BOOLEAN DEFAULT TRUE,
+    
+    luggage_size VARCHAR(20) DEFAULT 'MEDIUM' CHECK (luggage_size IN (
+        'SMALL', 'MEDIUM', 'LARGE'
+    )),
+    
+    detour_allowed VARCHAR(20) DEFAULT 'NONE' CHECK (detour_allowed IN (
+        'NONE', 'SMALL', 'MEDIUM', 'LARGE'
+    )),
+    
+    schedule_flexibility VARCHAR(30) DEFAULT 'FIFTEEN_MINUTES',
+    
+    -- Reservas
+    booking_mode VARCHAR(20) DEFAULT 'manual' CHECK (booking_mode IN (
+        'manual',  -- Motorista aprova
+        'auto'     -- Aprovação automática
+    )),
+    booking_type VARCHAR(20) DEFAULT 'online',
+    
+    -- Status
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN (
+        'ACTIVE',
+        'COMPLETED',
+        'CANCELLED',
+        'EXPIRED'
+    )),
+    
+    -- Métricas
+    view_count INTEGER DEFAULT 0,
+    question_response_count INTEGER DEFAULT 0,
+    answer_delay INTEGER DEFAULT 12, -- Horas
+    
+    -- Flags
+    is_comfort BOOLEAN DEFAULT FALSE,
+    cross_border_alert BOOLEAN DEFAULT FALSE,
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para busca
+CREATE INDEX idx_trips_departure_city ON trips(departure_city);
+CREATE INDEX idx_trips_arrival_city ON trips(arrival_city);
+CREATE INDEX idx_trips_departure_datetime ON trips(departure_datetime);
+CREATE INDEX idx_trips_status ON trips(status);
+CREATE INDEX idx_trips_driver ON trips(driver_id);
+CREATE INDEX idx_trips_search ON trips(departure_city, arrival_city, departure_datetime, status)
+    WHERE status = 'ACTIVE';
+```
+
+#### 4. **waypoints** - Paradas Intermediárias
+
+```sql
+CREATE TABLE waypoints (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    
+    order_index INTEGER NOT NULL,
+    
+    type VARCHAR(20)[] NOT NULL, -- ['TRIP_DEPARTURE', 'PICKUP'] ou ['TRIP_ARRIVAL', 'DROPOFF']
+    
+    city VARCHAR(100) NOT NULL,
+    address TEXT,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    country_code VARCHAR(2) DEFAULT 'AO',
+    
+    arrival_datetime TIMESTAMP WITH TIME ZONE,
+    departure_datetime TIMESTAMP WITH TIME ZONE,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_waypoints_trip ON waypoints(trip_id);
+```
+
+#### 5. **bookings** - Reservas
+
+```sql
+CREATE TABLE bookings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    passenger_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    
+    -- Identificação
+    booking_code VARCHAR(10) UNIQUE NOT NULL,
+    file_number VARCHAR(20),
+    
+    -- Detalhes
+    seats_booked INTEGER DEFAULT 1,
+    
+    -- Preços
+    unit_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    commission DECIMAL(10, 2) DEFAULT 0,
+    half_commission DECIMAL(10, 2),
+    price_paid DECIMAL(10, 2),
+    price_paid_without_commission DECIMAL(10, 2),
+    currency VARCHAR(3) DEFAULT 'AOA',
+    
+    -- Reembolsos
+    passenger_refund DECIMAL(10, 2) DEFAULT 0,
+    driver_compensation DECIMAL(10, 2) DEFAULT 0,
+    
+    -- Status
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING' CHECK (status IN (
+        'PENDING',
+        'WAIT_PAYMENT_INFO',
+        'BOOKED',
+        'CONFIRMED',
+        'CANCELLED_BY_PASSENGER',
+        'CANCELLED_BY_DRIVER',
+        'COMPLETED',
+        'REFUNDED'
+    )),
+    
+    -- Datas
+    expire_date TIMESTAMP WITH TIME ZONE,
+    trip_is_passed BOOLEAN DEFAULT FALSE,
+    
+    -- Contato
+    message_contact_allowed BOOLEAN DEFAULT TRUE,
+    phone_contact_allowed BOOLEAN DEFAULT FALSE,
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_bookings_trip ON bookings(trip_id);
+CREATE INDEX idx_bookings_passenger ON bookings(passenger_id);
+CREATE INDEX idx_bookings_status ON bookings(status);
+CREATE INDEX idx_bookings_code ON bookings(booking_code);
+```
+
+#### 6. **payments** - Pagamentos
+
+```sql
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+    
+    -- Referências
+    merchant_reference VARCHAR(100),
+    payment_reference BIGINT,
+    
+    -- Provedor
+    provider VARCHAR(50) NOT NULL, -- 'multicaixa', 'unitel_money', 'paypal'
+    provider_label VARCHAR(100),
+    method_id INTEGER,
+    one_click_enabled BOOLEAN DEFAULT FALSE,
+    
+    -- Valores
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'AOA',
+    
+    -- Status
+    status VARCHAR(30) DEFAULT 'PENDING' CHECK (status IN (
+        'PENDING',
+        'PROCESSING',
+        'COMPLETED',
+        'FAILED',
+        'REFUNDED',
+        'CANCELLED'
+    )),
+    
+    -- Resposta do Provedor
+    provider_response JSONB,
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_payments_booking ON payments(booking_id);
+CREATE INDEX idx_payments_status ON payments(status);
+```
+
+#### 7. **ratings** - Avaliações
+
+```sql
+CREATE TABLE ratings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id),
+    booking_id UUID REFERENCES bookings(id),
+    
+    -- Tipo de Avaliação
+    role VARCHAR(20) NOT NULL CHECK (role IN ('driver', 'passenger')),
+    
+    -- Nota
+    global_rating INTEGER NOT NULL CHECK (global_rating BETWEEN 1 AND 5),
+    
+    -- Comentário
+    comment TEXT,
+    
+    -- Moderação
+    moderation_status VARCHAR(20) DEFAULT 'ACTIVE',
+    
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_ratings_receiver ON ratings(receiver_id);
+CREATE INDEX idx_ratings_sender ON ratings(sender_id);
+CREATE INDEX idx_ratings_trip ON ratings(trip_id);
+
+-- Trigger para atualizar média de rating do usuário
+CREATE OR REPLACE FUNCTION update_user_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE users
+    SET rating = (
+        SELECT COALESCE(AVG(global_rating), 0)
+        FROM ratings
+        WHERE receiver_id = NEW.receiver_id
+    ),
+    rating_count = (
+        SELECT COUNT(*)
+        FROM ratings
+        WHERE receiver_id = NEW.receiver_id
+    )
+    WHERE id = NEW.receiver_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_user_rating
+AFTER INSERT OR UPDATE ON ratings
+FOR EACH ROW EXECUTE FUNCTION update_user_rating();
+```
+
+#### 8. **messages** - Mensagens entre Usuários
+
+```sql
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID REFERENCES trips(id),
+    booking_id UUID REFERENCES bookings(id),
+    
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    
+    content TEXT NOT NULL,
+    
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP WITH TIME ZONE,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_messages_trip ON messages(trip_id);
+CREATE INDEX idx_messages_booking ON messages(booking_id);
+CREATE INDEX idx_messages_receiver ON messages(receiver_id, is_read);
+```
+
+---
+
+## 🔐 Sistema de Autenticação
+
+### Fluxos de Autenticação
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant A as App
+    participant S as Supabase Auth
+    participant DB as Database
+    
+    Note over U,DB: Registro com Telefone
+    U->>A: Insere telefone
+    A->>S: signInWithOtp(phone)
+    S->>U: Envia SMS com código
+    U->>A: Insere código
+    A->>S: verifyOtp(phone, code)
+    S-->>A: Session + JWT
+    A->>DB: Criar perfil usuário
+    
+    Note over U,DB: Login Social (Google/Facebook)
+    U->>A: Clica "Entrar com Google"
+    A->>S: signInWithOAuth('google')
+    S->>U: Redireciona para Google
+    U->>S: Autoriza
+    S-->>A: Session + JWT
+    A->>DB: Criar/atualizar perfil
+```
+
+### Estados de Verificação do Usuário
+
+| Estado | `id_checked` | Descrição |
+|--------|--------------|-----------|
+| Não verificado | `TO_CHECK` | Aguardando verificação de ID |
+| Em análise | `PENDING` | Documento enviado, em análise |
+| Verificado | `VERIFIED` | Identidade confirmada |
+| Rejeitado | `REJECTED` | Documento inválido |
+| Não aplicável | `NOT_APPLICABLE` | Mercado não requer verificação |
+
+---
+
+## 📱 Funcionalidades Core
+
+### 1. Busca de Viagens
+
+**Endpoint:** `GET /api/trips/search`
+
+**Parâmetros:**
+```typescript
+interface TripSearchParams {
+  departure_city: string;
+  arrival_city: string;
+  departure_date: string; // ISO 8601
+  seats?: number;         // default: 1
+  page?: number;          // default: 1
+  limit?: number;         // default: 10
+  sort_by?: 'price' | 'departure_time' | 'rating';
+  min_rating?: number;
+}
+```
+
+**Resposta:**
+```typescript
+interface TripSearchResponse {
+  pager: {
+    page: number;
+    pages: number;
+    total: number;
+    limit: number;
+  };
+  trips: Trip[];
+}
+```
+
+### 2. Publicação de Viagem
+
+**Fluxo:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> SelectOrigin
+    SelectOrigin --> SelectDestination
+    SelectDestination --> AddStops: Opcional
+    AddStops --> SelectDestination
+    SelectDestination --> SelectDate
+    SelectDate --> SelectTime
+    SelectTime --> SetPrice: Sugestão automática
+    SetPrice --> SelectSeats
+    SelectSeats --> SelectVehicle
+    SelectVehicle --> AddDetails: Opcional
+    AddDetails --> Review
+    Review --> [*]: Publicar
+```
+
+### 3. Sistema de Reservas
+
+**Status da Reserva:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: Passageiro solicita
+    PENDING --> WAIT_PAYMENT_INFO: Motorista aceita
+    WAIT_PAYMENT_INFO --> BOOKED: Pagamento confirmado
+    BOOKED --> CONFIRMED: Viagem iniciada
+    CONFIRMED --> COMPLETED: Viagem finalizada
+    COMPLETED --> [*]
+    
+    PENDING --> CANCELLED_BY_PASSENGER
+    PENDING --> CANCELLED_BY_DRIVER
+    BOOKED --> CANCELLED_BY_PASSENGER
+    BOOKED --> CANCELLED_BY_DRIVER
+    CANCELLED_BY_PASSENGER --> REFUNDED
+    CANCELLED_BY_DRIVER --> REFUNDED
+    REFUNDED --> [*]
+```
+
+### 4. Sistema de Preços
+
+**Cálculo de Comissão (baseado no BlaBlaCar):**
+
+```typescript
+function calculatePricing(basePrice: number) {
+  const COMMISSION_RATE = 0.20; // 20%
+  const MIN_COMMISSION = 500;   // 500 AOA mínimo
+  
+  const commission = Math.max(
+    basePrice * COMMISSION_RATE,
+    MIN_COMMISSION
+  );
+  
+  return {
+    base_price: basePrice,
+    commission: commission,
+    total_price: basePrice + commission,
+    driver_receives: basePrice,
+  };
+}
+```
+
+### 5. Chat em Tempo Real
+
+**Usando Supabase Realtime:**
+
+```typescript
+// Subscrever a mensagens
+const channel = supabase
+  .channel('messages')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+      filter: `receiver_id=eq.${userId}`,
+    },
+    (payload) => handleNewMessage(payload.new)
+  )
+  .subscribe();
+```
+
+---
+
+## 🌍 Adaptações para Angola
+
+### 1. Cidades Principais
+
+```typescript
+const ANGOLA_CITIES = [
+  { name: 'Luanda', province: 'Luanda', lat: -8.8368, lng: 13.2343 },
+  { name: 'Benguela', province: 'Benguela', lat: -12.5763, lng: 13.4055 },
+  { name: 'Huambo', province: 'Huambo', lat: -12.7761, lng: 15.7392 },
+  { name: 'Lubango', province: 'Huíla', lat: -14.9167, lng: 13.5000 },
+  { name: 'Cabinda', province: 'Cabinda', lat: -5.5500, lng: 12.2000 },
+  { name: 'Malanje', province: 'Malanje', lat: -9.5402, lng: 16.3410 },
+  { name: 'Namibe', province: 'Namibe', lat: -15.1961, lng: 12.1522 },
+  { name: 'Uíge', province: 'Uíge', lat: -7.6089, lng: 15.0613 },
+  { name: 'Soyo', province: 'Zaire', lat: -6.1349, lng: 12.3691 },
+  { name: 'Sumbe', province: 'Cuanza Sul', lat: -11.2067, lng: 13.8500 },
+];
+```
+
+### 2. Telefones Angola
+
+```typescript
+const ANGOLA_PHONE_CONFIG = {
+  region_code: 'AO',
+  country_code: '+244',
+  example: '923 XXX XXX',
+  operators: [
+    { prefix: '91', name: 'Unitel' },
+    { prefix: '92', name: 'Unitel' },
+    { prefix: '93', name: 'Unitel' },
+    { prefix: '94', name: 'Movicel' },
+    { prefix: '95', name: 'Africell' },
+  ],
+};
+```
+
+### 3. Métodos de Pagamento
+
+```typescript
+const PAYMENT_PROVIDERS = [
+  {
+    id: 'multicaixa',
+    name: 'Multicaixa Express',
+    type: 'mobile_money',
+    icon: '/icons/multicaixa.png',
+  },
+  {
+    id: 'unitel_money',
+    name: 'Unitel Money',
+    type: 'mobile_money',
+    icon: '/icons/unitel.png',
+  },
+  {
+    id: 'bai_directo',
+    name: 'BAI Directo',
+    type: 'bank_transfer',
+    icon: '/icons/bai.png',
+  },
+  {
+    id: 'cash',
+    name: 'Dinheiro',
+    type: 'cash',
+    icon: '/icons/cash.png',
+  },
+];
+```
+
+### 4. Moeda
+
+```typescript
+const CURRENCY_CONFIG = {
+  code: 'AOA',
+  symbol: 'Kz',
+  name: 'Kwanza',
+  decimal_places: 2,
+  format: (amount: number) => `${amount.toLocaleString('pt-AO')} Kz`,
+};
+```
+
+---
+
+## 🔔 Sistema de Notificações
+
+### Tipos de Notificações
+
+| Evento | Template |
+|--------|----------|
+| Nova reserva | "{{passenger}} quer reservar {{seats}} lugar(es) para {{trip}}" |
+| Reserva aceita | "{{driver}} aceitou sua reserva para {{trip}}" |
+| Reserva cancelada | "Reserva cancelada para {{trip}}" |
+| Pagamento confirmado | "Pagamento de {{amount}} confirmado" |
+| Lembrete de viagem | "Sua viagem para {{destination}} é amanhã às {{time}}" |
+| Nova mensagem | "Nova mensagem de {{sender}}" |
+| Nova avaliação | "{{user}} te avaliou com {{stars}} estrelas" |
+
+---
+
+## 📊 Métricas e Analytics
+
+### KPIs Principais
+
+1. **GMV (Gross Merchandise Value)** - Valor total transacionado
+2. **Take Rate** - % de comissão efetiva
+3. **DAU/MAU** - Usuários ativos diários/mensais
+4. **Conversion Rate** - Buscas → Reservas
+5. **Driver LTV** - Lifetime Value do motorista
+6. **Passenger Retention** - Retenção de passageiros
+7. **Average Trip Value** - Valor médio por viagem
+8. **Fill Rate** - % de assentos ocupados
+
+### Eventos a Rastrear
+
+```typescript
+const ANALYTICS_EVENTS = [
+  'search_performed',
+  'trip_viewed',
+  'booking_started',
+  'booking_completed',
+  'payment_initiated',
+  'payment_completed',
+  'trip_published',
+  'message_sent',
+  'rating_submitted',
+  'profile_completed',
+];
+```
+
+---
+
+## 🔒 Segurança
+
+### Row Level Security (RLS)
+
+```sql
+-- Usuários só podem ver seus próprios dados sensíveis
+CREATE POLICY "Users can view own data"
+  ON users FOR SELECT
+  USING (auth.uid() = id);
+
+-- Motoristas podem ver reservas de suas viagens
+CREATE POLICY "Drivers can view trip bookings"
+  ON bookings FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM trips
+      WHERE trips.id = bookings.trip_id
+      AND trips.driver_id = auth.uid()
+    )
+  );
+
+-- Passageiros podem ver suas próprias reservas
+CREATE POLICY "Passengers can view own bookings"
+  ON bookings FOR SELECT
+  USING (passenger_id = auth.uid());
+```
+
+---
+
+## 📅 Roadmap de Desenvolvimento
+
+### Fase 1: MVP (8 semanas)
+
+- [ ] Autenticação (telefone + social)
+- [ ] Cadastro de perfil
+- [ ] Publicação de viagens
+- [ ] Busca de viagens
+- [ ] Reserva básica
+- [ ] Chat entre usuários
+- [ ] Sistema de avaliações
+
+### Fase 2: Monetização (4 semanas)
+
+- [ ] Integração Multicaixa Express
+- [ ] Integração Unitel Money
+- [ ] Sistema de comissões
+- [ ] Histórico de pagamentos
+
+### Fase 3: Engajamento (4 semanas)
+
+- [ ] Push notifications
+- [ ] Sistema de favoritos
+- [ ] Viagens recorrentes
+- [ ] Programa de fidelidade
+
+### Fase 4: Escala (4 semanas)
+
+- [ ] App mobile (React Native)
+- [ ] Analytics avançado
+- [ ] Painel administrativo
+- [ ] Suporte multilíngue
+
+---
+
+## 📚 Referências
+
+- [BlaBlaCar API v2](https://api.blablacar.com) - Estrutura de endpoints
+- [Supabase Docs](https://supabase.com/docs) - Backend as a Service
+- [Multicaixa Express](https://www.multicaixa.ao) - Pagamentos Angola
+
+---
+
+> **Nota:** Este documento é inspirado na análise do BlaBlaCar e adaptado para o contexto angolano. Todas as estruturas de dados e funcionalidades devem ser validadas com as necessidades específicas do mercado local.
